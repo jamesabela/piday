@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Approximation - Ancient Chinese Methods</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --panel-border: rgba(56, 189, 248, 0.4);
+            --text-main: #f8fafc;
+            --text-highlight: #38bdf8;
+            --btn-bg: #0284c7;
+            --btn-hover: #0369a1;
+            --btn-active: #0c4a6e;
+            --accent: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            /* Flex layout */
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar for UI elements */
+        #sidebar {
+            width: 380px;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--panel-border);
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        /* Main visualization area */
+        #main-content {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Top section layout - removed in favour of sidebar vertical stack */
+
+        /* Math Display */
+        .math-display {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .math-display h2 {
+            margin-top: 0;
+            color: var(--text-highlight);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #e2e8f0;
+        }
+
+        .stat-value.highlight {
+            color: var(--accent);
+        }
+
+        /* Milestones */
+        .milestones {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .milestones h2 {
+            margin-top: 0;
+            color: var(--text-highlight);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 10px;
+        }
+
+        .milestone-item {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            opacity: 0.5;
+            transition: opacity 0.3s, color 0.3s;
+        }
+
+        .milestone-item.active,
+        .milestone-item.reached {
+            opacity: 1;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Educational Message Box */
+        .message-box {
+            text-align: center;
+            font-size: 1.2rem;
+            width: 100%;
+            box-sizing: border-box;
+            color: #fca5a5;
+            font-style: italic;
+            border-color: rgba(252, 165, 165, 0.4);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Historical Callouts (Now integrated into sidebar flow) */
+        .callout {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            display: none;
+            border-left: 5px solid var(--text-highlight);
+        }
+
+        .callout h3 {
+            margin-top: 0;
+            color: var(--text-highlight);
+            font-size: 1.4rem;
+        }
+
+        .note {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(203, 213, 225, 0.3);
+            font-style: italic;
+        }
+
+        /* Controls */
+        .controls-wrapper {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        button:active {
+            background-color: var(--btn-active);
+            transform: translateY(2px);
+        }
+
+        button:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+        }
+
+        .toggle-btn.active {
+            background-color: var(--accent);
+        }
+
+        .toggle-btn.active:hover {
+            background-color: #059669;
+        }
+
+        /* Back Button */
+        #back-btn {
+            display: inline-block;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.2s;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        #back-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar">
+        <a href="index.html" id="back-btn">← Back to Menu</a>
+
+        <!-- Controls -->
+        <div class="panel controls">
+            <button id="btn-prev" onclick="app.prevStep()" disabled>⧏ Previous</button>
+            <button id="btn-next" onclick="app.nextStep()">Next ⧐</button>
+            <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+            <button id="btn-auto" onclick="app.toggleAutoPlay()">Auto-Play ⏵</button>
+            <button id="btn-reset" onclick="app.reset()">Reset</button>
+            <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+            <button id="btn-lines" class="toggle-btn" onclick="app.toggleLines()" style="flex: 1;">Lines</button>
+            <button id="btn-labels" class="toggle-btn" onclick="app.toggleLabels()" style="flex: 1;">Labels</button>
+        </div>
+
+        <!-- Educational Messages dynamically update -->
+        <div class="panel message-box" id="step-message">
+            Starting with a simple hexagon.
+        </div>
+
+        <!-- Historical Callout: Liu Hui -->
+        <div class="panel callout" id="callout-liuhui">
+            <h3>Liu Hui (3rd Century)</h3>
+            <p>Liu Hui, a great mathematician of the state of Cao Wei, provided a detailed commentary on the <i>Nine
+                    Chapters on the Mathematical Art</i>.</p>
+            <p>Using an inscribed polygon, he successfully calculated the area with a 96-sided polygon to demonstrate
+                that Pi is approximately 3.14 or 157/50.</p>
+            <p>He noted that the larger the number of sides, the closer the area becomes to the circle, leaving no area
+                left out.</p>
+        </div>
+
+        <!-- Historical Callout: Zu Chongzhi -->
+        <div class="panel callout" id="callout-zu">
+            <h3>Zu Chongzhi (5th Century)</h3>
+            <p>Zu Chongzhi extended Liu Hui's method. He proved mathematically that Pi lies strictly between
+                <b>3.1415926</b> and <b>3.1415927</b>.</p>
+            <p>He provided two rational approximations for Pi:</p>
+            <ul>
+                <li>Accurate: 22 / 7</li>
+                <li>Highly Accurate: <b>355 / 113</b> (Milü)</li>
+            </ul>
+            <div class="note">
+                Zu Chongzhi's original text is lost. Modern accounts associate his result with 12,288 sides.
+            </div>
+        </div>
+
+        <!-- Math Display -->
+        <div class="panel math-display">
+            <h2>Mathematical Data</h2>
+            <div class="stat-row">
+                <span class="stat-label">Sides (n):</span>
+                <span class="stat-value highlight" id="stat-sides">6</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Radius (r):</span>
+                <span class="stat-value" id="stat-radius">1.00000</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Length (s):</span>
+                <span class="stat-value" id="stat-length">1.00000</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Perim (n×s):</span>
+                <span class="stat-value" id="stat-perimeter">6.00000000</span>
+            </div>
+            <div style="margin:15px 0; border-bottom: 1px dotted var(--panel-border);"></div>
+            <div class="stat-row">
+                <span class="stat-label">Est. π:</span>
+                <span class="stat-value highlight" id="stat-pi-est">3.00000000</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">True π:</span>
+                <span class="stat-value">3.14159265...</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Abs Error:</span>
+                <span class="stat-value" id="stat-error">0.14159265</span>
+            </div>
+        </div>
+
+        <div class="panel milestones">
+            <h2>Key Milestones</h2>
+            <div class="milestone-item active" id="ms-6">6 sides (Hexagon)</div>
+            <div class="milestone-item" id="ms-96">96 sides (~3.14)</div>
+            <div class="milestone-item" id="ms-3072">3072 sides (~3.14159)</div>
+            <div class="milestone-item" id="ms-12288">12288 sides (<span style="font-family: serif;">355/113</span>)
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div id="game-container"></div>
+    </div>
+
+    <script>
+        // Steps of polygon sides: 6->12->24->48->96->192->384->768->1536->3072->6144->12288
+        const SIDES_DATA = [
+            6, 12, 24, 48, 96, 192, 384, 768, 1536, 3072, 6144, 12288
+        ];
+        const BASE_RADIUS = 300; // Will be safely scaled in resizing
+
+        class PiScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'PiScene' });
+                this.stepIndex = 0;
+
+                this.graphics = null;
+                this.circleGraphics = null;
+
+                // Toggle states
+                this.showLines = false;
+                this.showLabels = true;
+                this.isAutoPlaying = false;
+
+                // Animation states
+                this.isAnimating = false;
+                this.tweenProgress = 1; // 0 to 1 during transition
+
+                // Active polygon configuration
+                this.oldSides = 6;
+                this.currentSides = 6;
+
+                // Auto play timer
+                this.autoPlayEvent = null;
+            }
+
+            create() {
+                // Background subtle grid/texture, or just plain
+                this.cameras.main.setBackgroundColor('#0f172a');
+
+                // Setup graphics objects
+                this.circleGraphics = this.add.graphics();
+                this.graphics = this.add.graphics();
+
+                // Label text (for displaying "π ≈ X" directly on canvas if wanted, 
+                // but we are using DOM for main display. Let's keep a center label)
+                this.centerLabel = this.add.text(0, 0, 'π ≈ 3.0000000', {
+                    fontFamily: 'Courier New',
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    color: '#10b981',
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                    padding: { x: 10, y: 5 },
+                    borderRadius: 4
+                }).setOrigin(0.5);
+
+                // Initial Draw
+                this.updateUI();
+                this.drawScene();
+
+                // Handle Window Resize (Now bound to #main-content)
+                this.scale.on('resize', this.resize, this);
+
+                // Trigger an initial resize layout to fit new container properly
+                const container = document.getElementById('main-content');
+                this.scale.resize(container.clientWidth, container.clientHeight);
+                this.resize({ width: container.clientWidth, height: container.clientHeight });
+            }
+
+            resize(gameSize) {
+                const width = gameSize.width;
+                const height = gameSize.height;
+
+                this.cameras.main.centerOn(0, 0); // Origin at center
+
+                // Scale rendering radius based on screen size (keep it fitting)
+                const minDimension = Math.min(width, height);
+                // Allow it to be slightly wider relative to the container for better use of space
+                this.renderRadius = minDimension * 0.40;
+                this.renderRadius = Phaser.Math.Clamp(this.renderRadius, 100, 400);
+
+                this.drawScene();
+            }
+
+            getPolygonVertices(sides, radius) {
+                const verts = [];
+                // Start from top to look symmetric (offset by -PI/2)
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+                    verts.push({
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius,
+                        angle: angle
+                    });
+                }
+                return verts;
+            }
+
+            drawScene() {
+                // Draw static elements (Circle)
+                this.circleGraphics.clear();
+
+                // Glowing circle effect
+                this.circleGraphics.lineStyle(2, 0x38bdf8, 0.5);
+                this.circleGraphics.strokeCircle(0, 0, this.renderRadius + 2);
+                this.circleGraphics.lineStyle(3, 0x7dd3fc, 0.9);
+                this.circleGraphics.strokeCircle(0, 0, this.renderRadius);
+
+                // Center point
+                this.circleGraphics.fillStyle(0x38bdf8, 1);
+                this.circleGraphics.fillCircle(0, 0, 4);
+
+                // Now draw the polygon
+                this.graphics.clear();
+
+                if (!this.isAnimating) {
+                    this.drawPolygon(this.getPolygonVertices(this.currentSides, this.renderRadius));
+                } else {
+                    // Interpolate between old and new
+                    const oldVerts = this.getPolygonVertices(this.oldSides, this.renderRadius);
+                    const newVerts = this.getPolygonVertices(this.currentSides, this.renderRadius);
+                    const interpVerts = [];
+
+                    for (let i = 0; i < this.currentSides; i++) {
+                        const target = newVerts[i];
+                        let startX, startY;
+
+                        if (this.currentSides > this.oldSides) {
+                            // Forward animation: moving from N sides to 2N sides
+                            if (i % 2 === 0) {
+                                // Existing vertex moves nowhere mathematically, but mapped 1:1
+                                const oldIdx = i / 2;
+                                startX = oldVerts[oldIdx].x;
+                                startY = oldVerts[oldIdx].y;
+                            } else {
+                                // New vertex splits an edge, so start at the midpoint of the old edge
+                                const prevIdx = (i - 1) / 2;
+                                const nextIdx = (prevIdx + 1) % this.oldSides;
+                                startX = (oldVerts[prevIdx].x + oldVerts[nextIdx].x) / 2;
+                                startY = (oldVerts[prevIdx].y + oldVerts[nextIdx].y) / 2;
+                            }
+                        } else {
+                            // Backward animation: moving from N sides to N/2 sides
+                            // Current is the target (smaller), Old is the start (larger)
+                            const startOldVert = oldVerts[i * 2]; // The vertex it came from
+
+                            startX = startOldVert.x;
+                            startY = startOldVert.y;
+                        }
+
+                        // Linear interpolation
+                        const currentX = Phaser.Math.Linear(startX, target.x, this.tweenProgress);
+                        const currentY = Phaser.Math.Linear(startY, target.y, this.tweenProgress);
+
+                        interpVerts.push({ x: currentX, y: currentY });
+                    }
+                    this.drawPolygon(interpVerts);
+                }
+
+                if (this.showLabels) {
+                    this.centerLabel.setVisible(true);
+
+                    // Math logic for true polygon values (radius=1 for clean math)
+                    const sideLen = 2 * Math.sin(Math.PI / this.currentSides);
+                    const currentPerim = this.currentSides * sideLen;
+                    const piEst = currentPerim / 2;
+
+                    // Old math for smooth tweened stats
+                    const oldSideLen = 2 * Math.sin(Math.PI / this.oldSides);
+                    const oldPiEst = (this.oldSides * oldSideLen) / 2;
+
+                    const displayPi = Phaser.Math.Linear(oldPiEst, piEst, this.tweenProgress);
+                    this.centerLabel.setText(`π ≈ ${displayPi.toFixed(7)}`);
+                    this.centerLabel.setPosition(0, 0); // Always center
+
+                } else {
+                    this.centerLabel.setVisible(false);
+                }
+            }
+
+            drawPolygon(vertices) {
+                // Polygon lines
+                this.graphics.lineStyle(3, 0x10b981, 1);
+
+                this.graphics.beginPath();
+                this.graphics.moveTo(vertices[0].x, vertices[0].y);
+
+                for (let i = 1; i < vertices.length; i++) {
+                    this.graphics.lineTo(vertices[i].x, vertices[i].y);
+                }
+
+                this.graphics.closePath();
+                this.graphics.strokePath();
+
+                // Fill polygon lightly
+                this.graphics.fillStyle(0x10b981, 0.15);
+                this.graphics.fillPath();
+
+                // Construction Lines (Triangles)
+                if (this.showLines) {
+                    this.graphics.lineStyle(1, 0x10b981, 0.3);
+                    vertices.forEach(v => {
+                        this.graphics.beginPath();
+                        this.graphics.moveTo(0, 0);
+                        this.graphics.lineTo(v.x, v.y);
+                        this.graphics.strokePath();
+                    });
+                }
+
+                // Vertices Points
+                const isDense = vertices.length > 200;
+                if (!isDense) {
+                    this.graphics.fillStyle(0xf8fafc, 1);
+                    vertices.forEach(v => {
+                        this.graphics.fillCircle(v.x, v.y, 4);
+                    });
+                }
+            }
+
+            transitionToStep(newIndex) {
+                if (this.isAnimating) return;
+
+                if (newIndex < 0 || newIndex >= SIDES_DATA.length) {
+                    // Stop auto-play if we hit bounds
+                    if (this.isAutoPlaying) {
+                        this.toggleAutoPlay(false);
+                    }
+                    return;
+                }
+
+                this.oldSides = SIDES_DATA[this.stepIndex];
+                this.currentSides = SIDES_DATA[newIndex];
+                const isForward = newIndex > this.stepIndex;
+                this.stepIndex = newIndex;
+
+                // Sync UI immediately (buttons, highlights)
+                this.updateUI();
+
+                // Animate
+                this.isAnimating = true;
+
+                // ALWAYS animate from smaller to larger, 
+                // just run tween backwards if going down.
+                if (isForward) {
+                    this.oldSides = SIDES_DATA[newIndex - 1];
+                    this.currentSides = SIDES_DATA[newIndex];
+                    this.tweenProgress = 0;
+                    this.tweens.add({
+                        targets: this,
+                        tweenProgress: 1,
+                        duration: 800,
+                        ease: 'Power2',
+                        onUpdate: () => this.drawScene(),
+                        onComplete: () => {
+                            this.isAnimating = false;
+                            this.oldSides = this.currentSides;
+                            this.drawScene();
+                            if (this.isAutoPlaying) this.scheduleNextAutoPlay();
+                        }
+                    });
+                } else {
+                    this.oldSides = SIDES_DATA[newIndex];
+                    this.currentSides = SIDES_DATA[newIndex + 1];
+                    this.tweenProgress = 1; // Start at full polygon
+
+                    this.tweens.add({
+                        targets: this,
+                        tweenProgress: 0,
+                        duration: 800,
+                        ease: 'Power2',
+                        onUpdate: () => this.drawScene(),
+                        onComplete: () => {
+                            this.isAnimating = false;
+                            this.currentSides = this.oldSides; // Set the active state to the smaller one
+                            this.drawScene();
+                            if (this.isAutoPlaying) this.scheduleNextAutoPlay();
+                        }
+                    });
+                }
+            }
+
+            toggleLines(state) {
+                if (state !== undefined) this.showLines = state;
+                else this.showLines = !this.showLines;
+
+                document.getElementById('btn-lines').classList.toggle('active', this.showLines);
+                this.drawScene();
+            }
+
+            toggleLabels() {
+                this.showLabels = !this.showLabels;
+
+                const btn = document.getElementById('btn-labels');
+                btn.classList.toggle('active', !this.showLabels);
+                btn.innerText = this.showLabels ? "Hide Labels" : "Show Labels";
+
+                this.drawScene();
+            }
+
+            toggleAutoPlay(forceState) {
+                if (forceState !== undefined) {
+                    this.isAutoPlaying = forceState;
+                } else {
+                    this.isAutoPlaying = !this.isAutoPlaying;
+                }
+
+                const btn = document.getElementById('btn-auto');
+                if (this.isAutoPlaying) {
+                    btn.classList.add('active');
+                    btn.innerHTML = "Pause &#10074;&#10074;";
+                    if (!this.isAnimating) {
+                        this.scheduleNextAutoPlay();
+                    }
+                } else {
+                    btn.classList.remove('active');
+                    btn.innerHTML = "Auto-Play &#9205;";
+                    if (this.autoPlayEvent) {
+                        this.autoPlayEvent.remove();
+                    }
+                }
+            }
+
+            scheduleNextAutoPlay() {
+                if (!this.isAutoPlaying) return;
+
+                if (this.stepIndex >= SIDES_DATA.length - 1) {
+                    this.toggleAutoPlay(false);
+                    return;
+                }
+
+                if (this.autoPlayEvent) this.autoPlayEvent.remove();
+
+                // Allow a brief pause to read before moving
+                let delay = 2000;
+                if (this.stepIndex === 4 || this.stepIndex === 9 || this.stepIndex === 11) delay = 5000; // Extra time on milestones
+
+                this.autoPlayEvent = this.time.delayedCall(delay, () => {
+                    if (this.isAutoPlaying) {
+                        this.transitionToStep(this.stepIndex + 1);
+                    }
+                });
+            }
+
+            updateUI() {
+                const sides = SIDES_DATA[this.stepIndex];
+
+                // Enable/Disable buttons
+                document.getElementById('btn-prev').disabled = (this.stepIndex <= 0);
+                document.getElementById('btn-next').disabled = (this.stepIndex >= SIDES_DATA.length - 1);
+
+                // Update Math Panel Output (True theoretical math, radius=1 for display)
+                const MathPi = Math.PI;
+                const sideLength = 2 * Math.sin(Math.PI / sides);
+                const perimeter = sides * sideLength;
+                const piEstimate = perimeter / 2;
+                const absError = Math.abs(MathPi - piEstimate);
+
+                document.getElementById('stat-sides').innerText = sides.toString();
+                document.getElementById('stat-length').innerText = sideLength.toFixed(6);
+                document.getElementById('stat-perimeter').innerText = perimeter.toFixed(8);
+                document.getElementById('stat-pi-est').innerText = piEstimate.toFixed(8);
+
+                // Scientific notation for very small errors looks cleaner
+                if (absError < 0.0000001) {
+                    document.getElementById('stat-error').innerText = MathPi === piEstimate ? "0.000" : absError.toExponential(4);
+                } else {
+                    document.getElementById('stat-error').innerText = absError.toFixed(8);
+                }
+
+                // Milestones
+                const msList = [6, 96, 3072, 12288];
+                msList.forEach(ms => {
+                    const el = document.getElementById(`ms-${ms}`);
+                    if (sides === ms) {
+                        el.className = "milestone-item active";
+                    } else if (sides > ms) {
+                        el.className = "milestone-item reached";
+                    } else {
+                        el.className = "milestone-item";
+                    }
+                });
+
+                // Contextual Message
+                const msgBox = document.getElementById('step-message');
+                msgBox.style.opacity = 0;
+
+                let htmlText = "";
+                if (sides === 6) htmlText = "A regular hexagon fits comfortably inside a circle, but leaves large gaps.";
+                else if (sides === 12) htmlText = "Doubling to a dodecagon. The polygon follows the circle more closely.";
+                else if (sides === 96) htmlText = "96 sides - The edges are barely visible! This is Liu Hui's milestone (approx 3.14).";
+                else if (sides > 96 && sides < 3072) htmlText = `${sides} sides... The gaps are now microscopic. Mathematical precision increases.`;
+                else if (sides === 3072) htmlText = "3072 sides. Ancient mathematical techniques achieved remarkable 5-decimal precision (~3.14159).";
+                else if (sides === 12288) htmlText = "12,288 sides! The theoretical upper limit associated with Zu Chongzhi's fractions.";
+                else htmlText = `Refining the approximation... ${sides} sides.`;
+
+                // Educational Callouts
+                const huiBox = document.getElementById('callout-liuhui');
+                const zuBox = document.getElementById('callout-zu');
+                huiBox.style.display = (sides >= 96 && sides < 3072 && this.showLabels) ? 'block' : 'none';
+                zuBox.style.display = (sides >= 12288 && this.showLabels) ? 'block' : 'none';
+
+                if (msgBox.timeout) clearTimeout(msgBox.timeout);
+                msgBox.timeout = setTimeout(() => {
+                    if (this.showLabels) {
+                        msgBox.innerHTML = htmlText;
+                        msgBox.style.opacity = 1;
+                    }
+                }, 300);
+            }
+        }
+
+        // Global Boot Configuration
+        const config = {
+            type: Phaser.AUTO,
+            parent: 'game-container',
+            width: document.getElementById('main-content') ? document.getElementById('main-content').clientWidth : window.innerWidth,
+            height: document.getElementById('main-content') ? document.getElementById('main-content').clientHeight : window.innerHeight,
+            transparent: true, // background handled in Scene
+            scale: {
+                mode: Phaser.Scale.RESIZE,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            scene: [PiScene]
+        };
+
+        const game = new Phaser.Game(config);
+        let sceneRef = null;
+
+        // Ensure we load the scene into a ref after it's instantiated
+        game.events.on('ready', () => {
+            sceneRef = game.scene.keys['PiScene'];
+        });
+
+        // App-level interface for HTML buttons
+        const app = {
+            nextStep: () => {
+                if (sceneRef) sceneRef.transitionToStep(sceneRef.stepIndex + 1);
+            },
+            prevStep: () => {
+                if (sceneRef) sceneRef.transitionToStep(sceneRef.stepIndex - 1);
+            },
+            toggleAutoPlay: () => {
+                if (sceneRef) sceneRef.toggleAutoPlay();
+            },
+            toggleLines: () => {
+                if (sceneRef) sceneRef.toggleLines();
+            },
+            toggleLabels: () => {
+                if (sceneRef) sceneRef.toggleLabels();
+            },
+            reset: () => {
+                if (sceneRef) {
+                    sceneRef.toggleAutoPlay(false);
+                    // Disable animation temporarily for a fast reset
+                    sceneRef.isAnimating = false;
+                    sceneRef.stepIndex = 0;
+                    sceneRef.oldSides = 6;
+                    sceneRef.currentSides = 6;
+
+                    sceneRef.updateUI();
+                    sceneRef.drawScene();
+                }
+            }
+        };
+        // Listen to window resizes and manually push to Phaser if needed 
+        // to handle flex layout resizing the container div smoothly
+        window.addEventListener('resize', () => {
+            if (sceneRef && sceneRef.sys) {
+                const container = document.getElementById('main-content');
+                if (container) {
+                    game.scale.resize(container.clientWidth, container.clientHeight);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
