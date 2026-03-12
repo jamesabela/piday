@@ -10,10 +10,6 @@
 
         :root {
             --space-bg: #050508;
-            --sun-color: #ffcc33;
-            --earth-color: #2271b3;
-            --mars-color: #e27b58;
-            --moon-color: #ddd;
             --glass-bg: rgba(20, 20, 30, 0.7);
             --accent: #00d4ff;
         }
@@ -49,24 +45,53 @@
         }
 
         @keyframes twinkle {
-
-            0%,
-            100% {
+            0%, 100% {
                 opacity: 0.3;
                 transform: scale(1);
             }
-
             50% {
                 opacity: 1;
                 transform: scale(1.2);
             }
         }
 
+        /* Top Navigation Overlay */
+        #top-nav {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 30;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
         /* Solar System Container */
         #universe {
             position: relative;
             width: 100vw;
-            height: 100vh;
+            height: calc(100vh - 160px); /* Leave room for timeline at bottom */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -89,10 +114,24 @@
             transform: scale(1.1);
         }
 
+        .sun::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: transparent;
+        }
+
         .orbit {
             position: absolute;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
+            width: var(--orbit-size);
+            height: var(--orbit-size);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -113,99 +152,95 @@
             cursor: pointer;
             pointer-events: auto;
             transition: transform 0.3s, box-shadow 0.3s;
+            background: var(--planet-color);
+            width: var(--planet-size);
+            height: var(--planet-size);
+            top: calc(var(--planet-size) / -2);
+            left: calc(50% - var(--planet-size) / 2);
+            box-shadow: 0 0 10px var(--planet-color);
         }
 
         /* Hitbox expansion for easier clicking */
-        .planet::after,
-        .sun::after {
+        .planet::before {
             content: '';
             position: absolute;
             top: 50%;
             left: 50%;
             width: 44px;
-            /* Standard touch target size */
             height: 44px;
             transform: translate(-50%, -50%);
             border-radius: 50%;
             background: transparent;
+            z-index: 5;
         }
 
         .planet:hover {
             transform: scale(1.3);
-            box-shadow: 0 0 15px currentColor;
+            box-shadow: 0 0 20px var(--planet-color);
+            z-index: 15;
         }
 
-        /* Specific Orbits & Planets */
-        #orbit-moon {
-            width: 150px;
-            height: 150px;
-        }
-
-        #orbit-earth {
-            width: 350px;
-            height: 350px;
-        }
-
-        #orbit-mars {
-            width: 550px;
-            height: 550px;
-        }
-
-        #orbit-voyager {
-            width: 800px;
-            height: 800px;
-            border-style: dashed;
-        }
-
-        .earth {
-            background: var(--earth-color);
-            width: 20px;
-            height: 20px;
-            top: -10px;
-            box-shadow: 0 0 10px rgba(34, 113, 179, 0.5);
-        }
-
-        .mars {
-            background: var(--mars-color);
-            width: 15px;
-            height: 15px;
-            top: -7.5px;
+        /* Moon Specifics */
+        .moon-orbit {
+            position: absolute;
+            width: var(--moon-orbit-size);
+            height: var(--moon-orbit-size);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: rotate linear infinite;
+            animation-duration: var(--moon-period);
+            pointer-events: none;
         }
 
         .moon {
+            position: absolute;
+            width: var(--moon-size);
+            height: var(--moon-size);
             background: var(--moon-color);
-            width: 8px;
-            height: 8px;
-            top: -4px;
+            border-radius: 50%;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 0 5px var(--moon-color);
+        }
+        
+        .moon:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            box-shadow: 0 0 10px var(--moon-color);
         }
 
-        .voyager {
-            background: #fff;
-            width: 4px;
-            height: 4px;
-            top: -2px;
-            box-shadow: 0 0 5px #fff;
+        /* Saturn specific */
+        .saturn-rings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 250%;
+            height: 60%;
+            border-radius: 50%;
+            border: 4px solid rgba(227, 213, 153, 0.4);
+            border-top-color: transparent;
+            border-bottom-color: rgba(227, 213, 153, 0.7);
+            transform: translate(-50%, -50%) rotate(15deg);
+            pointer-events: none;
         }
 
         @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* UI Elements */
         #header {
             position: absolute;
             top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
+            left: 40px;
+            text-align: left;
             z-index: 20;
-            width: 90%;
         }
 
         h1 {
@@ -221,56 +256,151 @@
         .subtitle {
             font-size: 0.9rem;
             color: #888;
-            margin-top: 10px;
+            margin-top: 5px;
             letter-spacing: 2px;
         }
 
-        #nav-panels {
+        /* Horizontal Timeline Elements */
+        #bottom-timeline {
             position: absolute;
-            bottom: 40px;
+            bottom: 0px; 
+            left: 0;
+            width: 100vw;
+            height: 180px; /* Increased height */
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 80%, transparent 100%);
+            z-index: 25;
             display: flex;
-            gap: 20px;
-            z-index: 20;
-            width: 100%;
-            justify-content: center;
+            align-items: center;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0 40px;
+            box-sizing: border-box;
         }
 
-        .nav-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            padding: 20px 30px;
+        #bottom-timeline::-webkit-scrollbar {
+            height: 8px;
+        }
+        #bottom-timeline::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        #bottom-timeline::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.4);
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        #bottom-timeline:hover::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.8);
+        }
+
+        .timeline-scroll {
+            display: flex;
+            gap: 15px;
+            height: 100%;
+            align-items: center;
+            padding: 20px 0; /* Add top/bottom padding to prevent cutoff on hover */
+        }
+
+        .timeline-item {
+            position: relative;
+            min-width: 180px; /* Slightly wider */
+            height: 110px;    /* Slightly taller */
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(20, 20, 30, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             text-decoration: none;
             color: white;
-            transition: all 0.3s;
-            text-align: center;
-            width: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            isolation: isolate;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s, border-color 0.3s;
+            cursor: pointer;
+            z-index: 1;
         }
 
-        .nav-card:hover {
+        .timeline-item:hover, .timeline-item.active-timeline {
+            transform: scale(1.3) translateY(-10px);
+            z-index: 10;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 212, 255, 0.4);
             border-color: var(--accent);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
         }
 
-        .nav-card h3 {
-            margin: 0 0 10px;
-            font-family: 'Orbitron';
+        .timeline-item .img-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            border-radius: 11px;
+        }
+
+        .timeline-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Changed from cover to contain */
+            object-position: bottom; /* Align image to bottom */
+            opacity: 0.5;
+            transition: opacity 0.3s, filter 0.3s;
+            filter: grayscale(50%);
+        }
+
+        .timeline-item:hover img, .timeline-item.active-timeline img {
+            opacity: 1;
+            filter: grayscale(0%);
+        }
+
+        .timeline-content {
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%); /* Make gradient slightly darker */
+            padding: 10px;
+            border-bottom-left-radius: 11px;
+            border-bottom-right-radius: 11px;
+            pointer-events: none;
+            position: relative; /* Ensure text stays above image */
+            z-index: 5;
+        }
+
+        .timeline-year {
+            font-size: 0.65rem;
             color: var(--accent);
+            font-weight: bold;
         }
 
-        .nav-card p {
-            margin: 0;
-            font-size: 0.8rem;
-            color: #ccc;
+        .timeline-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: white;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-badge {
+            font-size: 0.5rem;
+            background: var(--accent);
+            color: #000;
+            padding: 3px 6px;
+            border-radius: 3px;
+            margin-top: 5px;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            pointer-events: auto; /* Allow clicking the badge */
+        }
+        
+        .activity-badge:hover {
+            box-shadow: 0 0 5px #fff;
+            transform: scale(1.05);
         }
 
         /* Info Overlay */
         #info-panel {
             position: absolute;
             right: -400px;
-            top: 50%;
+            top: calc(50% - 80px); /* Adjust for timeline taking space */
             transform: translateY(-50%);
             width: 320px;
             background: var(--glass-bg);
@@ -280,6 +410,7 @@
             border-left: 2px solid var(--accent);
             transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 30;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
         }
 
         #info-panel.active {
@@ -291,7 +422,13 @@
             top: 15px;
             right: 15px;
             cursor: pointer;
-            color: #666;
+            color: #888;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
         }
 
         #info-title {
@@ -302,9 +439,10 @@
         }
 
         #info-pi {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #fff;
             margin-bottom: 20px;
+            word-wrap: break-word; /* Handle long digit strings */
         }
 
         #info-desc {
@@ -324,25 +462,12 @@
 
         /* Mobile Adjustments */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.5rem;
-                letter-spacing: 5px;
-            }
-
-            #orbit-earth {
-                width: 250px;
-                height: 250px;
-            }
-
-            #orbit-mars {
-                width: 380px;
-                height: 380px;
-            }
-
-            #orbit-voyager {
-                width: 500px;
-                height: 500px;
-            }
+            h1 { font-size: 1.5rem; letter-spacing: 5px; }
+            #header { top: 70px; left: 20px; }
+            #top-nav { top: 20px; right: 20px; gap: 8px; flex-wrap: wrap; justify-content: flex-end; width: calc(100% - 40px);}
+            .nav-btn { padding: 6px 10px; font-size: 0.75rem; }
+            
+            #universe { transform: scale(0.6); }
 
             #info-panel {
                 width: 100%;
@@ -354,16 +479,12 @@
                 border-top: 2px solid var(--accent);
                 border-left: none;
                 transform: none;
+                box-sizing: border-box;
             }
 
             #info-panel.active {
-                bottom: 0;
+                bottom: 160px; /* Above timeline */
                 right: 0;
-            }
-
-            .nav-card {
-                width: 140px;
-                padding: 15px;
             }
         }
     </style>
@@ -371,6 +492,13 @@
 
 <body>
     <div id="starfield"></div>
+
+    <div id="top-nav">
+        <a href="quiz.html" class="nav-btn">Quiz</a>
+        <a href="buffon.html" class="nav-btn">Buffon</a>
+        <a href="ancient.html" class="nav-btn">Ancient</a>
+        <a href="piday.html" class="nav-btn">Stream</a>
+    </div>
 
     <div id="header">
         <h1>Pi in the Sky</h1>
@@ -380,61 +508,192 @@
     <div id="universe">
         <div class="sun" onclick="showInfo('sun')"></div>
 
-        <!-- Earth Orbit -->
-        <div class="orbit" id="orbit-earth">
-            <div class="planet-container" style="--period: 20s">
-                <div class="planet earth" onclick="showInfo('earth')"></div>
-            </div>
-
-            <!-- Moon Orbit (Inside Earth orbit for simplicity) -->
-            <div class="orbit" id="orbit-moon"
-                style="border: none; animation: rotate linear infinite; animation-duration: 5s;">
-                <div class="planet moon" onclick="showInfo('moon')"></div>
+        <!-- Mercury -->
+        <div class="orbit" style="--orbit-size: 120px;">
+            <div class="planet-container" style="--period: 8s">
+                <div class="planet" style="--planet-size: 8px; --planet-color: #a8a8a8" onclick="showInfo('mercury')"></div>
             </div>
         </div>
 
-        <!-- Mars Orbit -->
-        <div class="orbit" id="orbit-mars">
-            <div class="planet-container" style="--period: 38s">
-                <div class="planet mars" onclick="showInfo('mars')"></div>
+        <!-- Venus -->
+        <div class="orbit" style="--orbit-size: 180px;">
+            <div class="planet-container" style="--period: 15s">
+                <div class="planet" style="--planet-size: 16px; --planet-color: #e3bb76" onclick="showInfo('venus')"></div>
             </div>
         </div>
 
-        <!-- Voyager/Deep Space Orbit -->
-        <div class="orbit" id="orbit-voyager">
+        <!-- Earth Orbit with Moon -->
+        <div class="orbit" style="--orbit-size: 260px;">
+            <div class="planet-container" style="--period: 25s">
+                <div class="planet" style="--planet-size: 20px; --planet-color: #2271b3" onclick="showInfo('earth')">
+                    <!-- Moon Orbit centered inside Earth -->
+                    <div class="moon-orbit" style="--moon-orbit-size: 35px; --moon-period: 3s">
+                        <div class="moon" style="--moon-size: 6px; --moon-color: #ddd" onclick="showInfo('moon'); window.event.stopPropagation();"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mars -->
+        <div class="orbit" style="--orbit-size: 340px;">
+            <div class="planet-container" style="--period: 35s">
+                <div class="planet" style="--planet-size: 12px; --planet-color: #e27b58" onclick="showInfo('mars')"></div>
+            </div>
+        </div>
+
+        <!-- Jupiter -->
+        <div class="orbit" style="--orbit-size: 480px;">
             <div class="planet-container" style="--period: 60s">
-                <div class="planet voyager" onclick="showInfo('voyager')"></div>
+                <div class="planet" style="--planet-size: 35px; --planet-color: #c88b3a" onclick="showInfo('jupiter')"></div>
+            </div>
+        </div>
+
+        <!-- Saturn -->
+        <div class="orbit" style="--orbit-size: 620px;">
+            <div class="planet-container" style="--period: 100s">
+                <div class="planet" style="--planet-size: 30px; --planet-color: #e3d599" onclick="showInfo('saturn')">
+                    <div class="saturn-rings"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uranus -->
+        <div class="orbit" style="--orbit-size: 740px;">
+            <div class="planet-container" style="--period: 180s">
+                <div class="planet" style="--planet-size: 22px; --planet-color: #d1e7e7" onclick="showInfo('uranus')"></div>
+            </div>
+        </div>
+
+        <!-- Neptune -->
+        <div class="orbit" style="--orbit-size: 860px;">
+            <div class="planet-container" style="--period: 300s">
+                <div class="planet" style="--planet-size: 20px; --planet-color: #5b5ddf" onclick="showInfo('neptune')"></div>
             </div>
         </div>
     </div>
 
+    <!-- Info Panel Box -->
     <div id="info-panel">
         <span class="close-btn" onclick="hideInfo()">&times; CLOSE</span>
         <div id="info-title">Earth</div>
         <div class="pi-badge" id="info-dp">15 Decimal Places</div>
         <div id="info-pi">3.141592653589793</div>
-        <div id="info-desc">
-            NASA's JPL uses this much for the high-precision calculations of planetary navigation.
-        </div>
+        <div id="info-desc"></div>
     </div>
 
-    <div id="nav-panels">
-        <a href="quiz.html" class="nav-card">
-            <h3>QUIZ</h3>
-            <p>Test your memory up to 39 places</p>
-        </a>
-        <a href="buffon.html" class="nav-card">
-            <h3>BUFFON</h3>
-            <p>Estimate Pi with needles</p>
-        </a>
-        <a href="ancient.html" class="nav-card">
-            <h3>ANCIENT</h3>
-            <p>Polygon approximation of Pi</p>
-        </a>
-        <a href="piday.html" class="nav-card">
-            <h3>STREAM</h3>
-            <p>Live digit generation</p>
-        </a>
+    <!-- Bottom Timeline -->
+    <div id="bottom-timeline">
+        <div class="timeline-scroll">
+            <div class="timeline-item" onclick="showInfo('t_babylon')">
+                <div class="img-wrapper"><img src="images/pi_babylon.png" alt="Babylon"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2000 BCE</div>
+                    <div class="timeline-title">Babylon</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_egypt')">
+                <div class="img-wrapper"><img src="images/pi_egypt.png" alt="Egypt"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1650 BCE</div>
+                    <div class="timeline-title">Egypt</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_archimedes')">
+                <div class="img-wrapper"><img src="images/pi_greece_archimedes.png" alt="Archimedes"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">250 BCE</div>
+                    <div class="timeline-title">Archimedes</div>
+                    <a href="ancient.html" class="activity-badge" onclick="window.event.stopPropagation();">Activity: Ancient</a>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_china_ancient')">
+                <div class="img-wrapper"><img src="images/pi_ancient_china.png" alt="Ancient China"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">200 CE</div>
+                    <div class="timeline-title">Ancient China</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_liu_hui')">
+                <div class="img-wrapper"><img src="images/pi_liu_hui.png" alt="Liu Hui"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">263 CE</div>
+                    <div class="timeline-title">Liu Hui</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_zu_chongzhi')">
+                <div class="img-wrapper"><img src="images/pi_zu_chongzhi.png" alt="Zu Chongzhi"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">480 CE</div>
+                    <div class="timeline-title">Zu Chongzhi</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_madhava')">
+                <div class="img-wrapper"><img src="images/pi_madhava.png" alt="Madhava"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1400 CE</div>
+                    <div class="timeline-title">Madhava</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_viete')">
+                <div class="img-wrapper"><img src="images/pi_viete.png" alt="Viète"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1593</div>
+                    <div class="timeline-title">Francois Viète</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_william_jones')">
+                <div class="img-wrapper"><img src="images/pi_william_jones.png" alt="William Jones"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1706</div>
+                    <div class="timeline-title">William Jones</div>
+                    <a href="quiz.html" class="activity-badge" onclick="window.event.stopPropagation();">Activity: Quiz</a>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_euler')">
+                <div class="img-wrapper"><img src="images/pi_euler.png" alt="Euler"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1737</div>
+                    <div class="timeline-title">Leonhard Euler</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_buffon')">
+                <div class="img-wrapper"><img src="images/pi_buffon.png" alt="Buffon"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1777</div>
+                    <div class="timeline-title">Buffon</div>
+                    <a href="buffon.html" class="activity-badge" onclick="window.event.stopPropagation();">Activity: Buffon</a>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_eniac')">
+                <div class="img-wrapper"><img src="images/pi_eniac.png" alt="ENIAC"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1949</div>
+                    <div class="timeline-title">ENIAC</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_japan')">
+                <div class="img-wrapper"><img src="images/pi_japan_1989.png" alt="Japan"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1989</div>
+                    <div class="timeline-title">Japan Supercomputer</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_google')">
+                <div class="img-wrapper"><img src="images/pi_google_2019.png" alt="Google"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2019</div>
+                    <div class="timeline-title">Google Cloud</div>
+                </div>
+            </div>
+            <div class="timeline-item" onclick="showInfo('t_modern')">
+                <div class="img-wrapper"><img src="images/pi_modern_supercomputing.png" alt="Modern Supercomputing"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2022+</div>
+                    <div class="timeline-title">Modern Supercomputing</div>
+                    <a href="piday.html" class="activity-badge" onclick="window.event.stopPropagation();">Activity: Stream</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -454,36 +713,34 @@
         }
 
         const data = {
-            sun: {
-                title: "The Sun",
-                dp: "1-5 DP",
-                pi: "3.14159",
-                desc: "Solar physics rarely requires extreme precision. 5 decimal places are plenty for modelling energy flux and solar wind trajectories."
-            },
-            moon: {
-                title: "The Moon",
-                dp: "10-12 Decimal Places",
-                pi: "3.1415926535",
-                desc: "Calculating lunar orbits for satellite insertions requires high precision, but is less demanding than interplanetary travel."
-            },
-            earth: {
-                title: "Planet Earth",
-                dp: "15 Decimal Places",
-                pi: "3.141592653589793",
-                desc: "NASA JPL standard for planetary navigation. At this precision, the Earth's circumference (24,901 miles) is measured to within the width of a human hair."
-            },
-            mars: {
-                title: "Mars Missions",
-                dp: "16 Decimal Places",
-                pi: "3.1415926535897932",
-                desc: "Landing a rover on Mars requires accounting for extreme distances. 16 digits ensure we don't miss our landing zone by even a centimeter."
-            },
-            voyager: {
-                title: "Deep Space (Voyager 1)",
-                dp: "15-16 Decimal Places",
-                pi: "3.1415926535897932",
-                desc: "Voyager 1 is over 12.5 billion miles away. Using 15 decimal places, our calculation of its position is off by only 1.5 inches!"
-            }
+            // Solar System Data
+            sun: { title: "The Sun", dp: "1-5 DP", pi: "3.14159", desc: "Solar physics rarely requires extreme precision. 5 decimal places are plenty for modelling energy flux and solar wind trajectories." },
+            mercury: { title: "Mercury", dp: "5-6 Decimal Places", pi: "3.141592", desc: "Inner solar system calculations require less extreme distance precision for probes like MESSENGER." },
+            venus: { title: "Venus", dp: "10 Decimal Places", pi: "3.1415926535", desc: "Venera and Magellan missions required high orbital precision to pierce the thick atmosphere." },
+            earth: { title: "Planet Earth", dp: "15 Decimal Places", pi: "3.141592653589793", desc: "NASA JPL standard for planetary navigation. At this precision, the Earth's circumference is bounded to atomic widths." },
+            moon: { title: "The Moon", dp: "10-12 Decimal Places", pi: "3.1415926535", desc: "Calculating lunar orbits for satellite insertions requires high precision, but is less demanding than interplanetary travel." },
+            mars: { title: "Mars Missions", dp: "16 Decimal Places", pi: "3.1415926535897932", desc: "Landing a rover on Mars requires accounting for extreme distances. 16 digits ensure we don't miss our landing zone even by a centimeter." },
+            jupiter: { title: "Jupiter", dp: "15-16 Decimal Places", pi: "3.1415926535897932", desc: "Missions like Galileo and Juno use this extreme precision to orbit the massive gas giant dynamically." },
+            saturn: { title: "Saturn", dp: "15-16 Decimal Places", pi: "3.1415926535897932", desc: "Cassini-Huygens relied on extreme precision to delicately navigate safely between Saturn's icy rings." },
+            uranus: { title: "Uranus", dp: "15 Decimal Places", pi: "3.141592653589793", desc: "Voyager 2 flew by Uranus matching precision standards of outer system mechanics." },
+            neptune: { title: "Neptune", dp: "15-16 Decimal Places", pi: "3.1415926535897932", desc: "The farthest official planet. Precision navigation is undeniably vital to not miss the target by millions of miles." },
+
+            // Timeline Data
+            t_babylon: { title: "Babylon", dp: "Date: Around 2000 BCE", pi: "3.125", desc: "Ancient Babylonian scholars studying mathematics and geometry used a rudimentary value to solve practical problems." },
+            t_egypt: { title: "Egypt", dp: "Date: Around 1650 BCE", pi: "3.1605", desc: "The Rhind Mathematical Papyrus demonstrates Egyptian scribes calculating geometry and using a fractional approximation." },
+            t_archimedes: { title: "Archimedes", dp: "Date: Around 250 BCE", pi: "3.1408 < π < 3.1429", desc: "Archimedes used inscribed and circumscribed polygons to tightly bound the value of pi, an early form of limit theory." },
+            t_china_ancient: { title: "Ancient China", dp: "Date: 200 BCE to 200 CE", pi: "3", desc: "During the Han dynasty, a practical whole-number approximation was commonly used in general construction and calculations." },
+            t_liu_hui: { title: "Liu Hui", dp: "Date: 263 CE", pi: "3.1416", desc: "Using the polygon doubling method, Liu Hui refined the approximation reasoning by utilizing polygons up to 96 sides." },
+            t_zu_chongzhi: { title: "Zu Chongzhi", dp: "Date: Around 480 CE", pi: "3.1415926", desc: "Zu Chongzhi achieved an extremely accurate bound using large polygons (likely 12,288 sides). He famously deduced the fraction 355/113." },
+            t_madhava: { title: "Madhava", dp: "Date: Around 1400 CE", pi: "Infinite Series", desc: "Madhava developed an infinite series for pi, marking the beginning of calculus-based methods centuries before European discovery." },
+            t_viete: { title: "Francois Viète", dp: "Date: 1593", pi: "Infinite product", desc: "Viète developed the first infinite product formula regarding pi, creating a profound analytical link for future mathematicians." },
+            t_william_jones: { title: "William Jones", dp: "Date: 1706", pi: "Symbol π", desc: "William Jones was the first to use the Greek letter pi symbol to represent the ratio of a circle's circumference to its diameter in his book Synopsis Palmariorum Matheseos." },
+            t_euler: { title: "Leonhard Euler", dp: "Date: 1737", pi: "Symbol π", desc: "The legendary mathematician popularized the use of the pi symbol throughout the mathematical community." },
+            t_buffon: { title: "Buffon", dp: "Date: 1777", pi: "Probability", desc: "Introduced Buffon's Needle probability experiment, forming the first major analytical link between pi and randomness." },
+            t_eniac: { title: "ENIAC Computer", dp: "Date: 1949", pi: "2,037 digits", desc: "The first computer calculation of pi, pushing computation into the modern technological era with historically unprecedented accuracy." },
+            t_japan: { title: "Japan Supercomputer", dp: "Date: 1989", pi: "> 1 Billion digits", desc: "Advances in supercomputing led to the computation of over a billion digits of pi, breaking significant thresholds in data science." },
+            t_google: { title: "Google Cloud", dp: "Date: 2019", pi: "31.4 Trillion digits", desc: "Using cloud computing technology, Emma Haruka Iwao at Google shattered records by calculating over 31.4 trillion digits." },
+            t_modern: { title: "Modern Supercomputing", dp: "Date: 2022 onwards", pi: "> 100 Trillion digits", desc: "Over 100 trillion digits calculated using cutting edge algorithms, optimized storage, and advanced exascale computing infrastructures." }
         };
 
         const panel = document.getElementById('info-panel');
@@ -491,24 +748,43 @@
         const dpEl = document.getElementById('info-dp');
         const piEl = document.getElementById('info-pi');
         const descEl = document.getElementById('info-desc');
+        const timelineItems = document.querySelectorAll('.timeline-item');
 
         function showInfo(id) {
             const item = data[id];
+            if (!item) return;
             titleEl.textContent = item.title;
             dpEl.textContent = item.dp;
             piEl.textContent = item.pi;
             descEl.textContent = item.desc;
             panel.classList.add('active');
+
+            // Highlight active timeline item
+            timelineItems.forEach(el => el.classList.remove('active-timeline'));
+            if(id.startsWith('t_')) {
+                const target = document.querySelector(`.timeline-item[onclick="showInfo('${id}')"]`);
+                if(target) target.classList.add('active-timeline');
+            }
         }
 
         function hideInfo() {
             panel.classList.remove('active');
+            timelineItems.forEach(el => el.classList.remove('active-timeline'));
         }
 
         // Handle clicking outside to close
         document.addEventListener('click', (e) => {
-            if (!panel.contains(e.target) && !e.target.closest('.planet') && !e.target.closest('.sun')) {
+            if (!panel.contains(e.target) && !e.target.closest('.planet') && !e.target.closest('.sun') && !e.target.closest('.timeline-item')) {
                 hideInfo();
+            }
+        });
+
+        // Add horizontal scrolling with mouse wheel for the timeline
+        const timelineScroll = document.getElementById('bottom-timeline');
+        timelineScroll.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                timelineScroll.scrollLeft += e.deltaY;
             }
         });
     </script>
