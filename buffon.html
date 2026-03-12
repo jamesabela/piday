@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buffon's Needle: Estimating Pi</title>
+    <!-- Phaser 3 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=JetBrains+Mono&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --line-color: #2d3436;
+            --cross-color: #e74c3c;
+            --no-cross-color: #3498db;
+            --accent-color: #2ecc71;
+            --panel-bg: white;
+            --sidebar-width: 350px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Layout */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--panel-bg);
+            height: 100vh;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 20;
+            overflow-y: auto;
+        }
+
+        #main-content {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #phaser-container {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.6rem;
+            color: var(--line-color);
+        }
+
+        h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono';
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--line-color);
+        }
+
+        .stat-value.highlight {
+            color: var(--accent-color);
+        }
+
+        .formula-box {
+            background: #2d3436;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-family: 'JetBrains Mono';
+            font-size: 1rem;
+            margin: 10px 0;
+        }
+
+        #controls-bar {
+            position: absolute;
+            bottom: 30px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 30;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #eee;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.9);
+        }
+
+        .btn-primary {
+            background: var(--line-color);
+            color: white;
+        }
+
+        .btn-green {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-error {
+            background: var(--cross-color);
+            color: white;
+        }
+
+        .explanation {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .back-link {
+            margin-top: auto;
+            color: var(--no-cross-color);
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            accent-color: var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <div class="section">
+            <h1>Buffon's Needle</h1>
+            <p class="explanation">A geometric probability experiment to estimate the value of &pi;.</p>
+            <p class="explanation" style="font-style: italic; color: var(--accent-color); margin-top: 5px;">
+                Tip: Click inside the circle to drop a needle manually!
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Live Results</h2>
+            <div class="stat-card">
+                <div class="stat-label">Estimated &pi;</div>
+                <div class="stat-value highlight" id="val-pi">0.0000</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="stat-card" style="padding: 12px;">
+                    <div class="stat-label">Total Drops (N)</div>
+                    <div class="stat-value" id="val-n" style="font-size: 1.2rem;">0</div>
+                </div>
+                <div class="stat-card" style="padding: 12px; border: 2px solid var(--cross-color);">
+                    <div class="stat-label">Crosses (C) <span
+                            style="color: var(--cross-color); font-weight: bold;">[Red]</span></div>
+                    <div class="stat-value" id="val-c" style="font-size: 1.2rem; color: var(--cross-color);">0</div>
+                </div>
+            </div>
+            <div class="stat-card" style="padding: 12px;">
+                <div class="stat-label">Error Rate</div>
+                <div class="stat-value" id="val-err" style="font-size: 1.2rem; color: #e74c3c;">0.00%</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>The Math</h2>
+            <p class="explanation">When needle length equals the gap between lines (L=D):</p>
+            <div class="formula-box">
+                &pi; &approx; <span id="formula-2n">2N</span> / <span id="formula-c"
+                    style="color: var(--cross-color);">C</span>
+                <div id="formula-result" style="color: var(--accent-color); font-size: 1.2rem; margin-top: 5px;"></div>
+            </div>
+            <p class="explanation" style="font-size: 0.85rem; margin-top: 10px;">
+                <span style="color: var(--cross-color); font-weight: bold;">Red Needles</span> cross a line (C).<br>
+                <span style="color: var(--no-cross-color); font-weight: bold;">Blue Needles</span> do not cross.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>History</h2>
+            <p class="explanation" style="font-size: 0.8rem;">
+                Proposed in <b>1777</b> by the Comte de Buffon. It was the first "Monte Carlo" method in history, using
+                randomness to find Pi.
+            </p>
+        </div>
+
+        <div class="checkbox-container" style="margin-bottom: 20px; font-size: 0.85rem;">
+            <input type="checkbox" id="check-hide-old" checked>
+            <label for="check-hide-old">Visual Limit (Last 5000)</label>
+        </div>
+
+        <a href="index.html" class="back-link">← Return to Home</a>
+    </div>
+
+    <div id="main-content">
+        <div id="phaser-container"></div>
+
+        <div id="controls-bar">
+            <button class="btn btn-primary" onclick="sim.drop(1)">+1</button>
+            <button class="btn btn-primary" onclick="sim.drop(10)">+10</button>
+            <button class="btn btn-primary" onclick="sim.drop(100)">+100</button>
+            <div style="width: 2px; height: 30px; background: #ddd;"></div>
+            <button id="btn-auto" class="btn btn-green" onclick="sim.toggleAuto()">Play</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.7rem; color: #888;">SPEED</span>
+                <input type="range" id="speed-slider" min="1" max="100" value="10">
+            </div>
+            <button class="btn btn-error" onclick="sim.reset()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        class BuffonSimulation {
+            constructor() {
+                this.n = 0;
+                this.c = 0;
+                this.isPlaying = false;
+                this.needleLength = 30;
+                this.lineSpacing = 30;
+                this.needles = [];
+                this.maxDisplayed = 5000;
+
+                this.config = {
+                    type: Phaser.AUTO,
+                    parent: 'phaser-container',
+                    width: window.innerWidth - 350,
+                    height: window.innerHeight,
+                    backgroundColor: '#f0f2f5',
+                    scene: {
+                        create: this.create.bind(this),
+                        update: this.update.bind(this)
+                    }
+                };
+
+                this.game = new Phaser.Game(this.config);
+            }
+
+            create() {
+                this.scene = this.game.scene.scenes[0];
+                this.graphics = this.scene.add.graphics();
+                this.needleGraphics = this.scene.add.graphics();
+
+                this.graphics.setDepth(1);
+                this.needleGraphics.setDepth(2);
+
+                this.createParallelLines();
+
+                this.scene.input.on('pointerdown', (pointer) => {
+                    this.dropManual(pointer.x, pointer.y);
+                });
+
+                window.addEventListener('resize', () => {
+                    const w = window.innerWidth - 350;
+                    const h = window.innerHeight;
+                    this.game.scale.resize(w, h);
+                    this.createParallelLines();
+                });
+            }
+
+            dropManual(x, y) {
+                const dx = x - this.simArea.x;
+                const dy = y - this.simArea.y;
+                if (dx * dx + dy * dy > this.simArea.radius * this.simArea.radius) return;
+
+                const angle = Math.random() * Math.PI;
+                const crossed = this.needleCrossesLine(y, angle);
+                const needle = { x, y, angle, crossed };
+
+                this.animateNeedle(needle, 500);
+            }
+
+            createParallelLines() {
+                this.graphics.clear();
+                const availableWidth = window.innerWidth - 350;
+                const size = Math.min(availableWidth * 0.5, window.innerHeight * 0.6, 350);
+                this.simArea = {
+                    x: availableWidth / 2,
+                    y: window.innerHeight / 2,
+                    radius: size / 2
+                };
+
+                this.graphics.fillStyle(0xffffff, 1);
+                this.graphics.fillCircle(this.simArea.x, this.simArea.y, this.simArea.radius);
+                this.graphics.lineStyle(4, 0x2d3436, 1);
+                this.graphics.strokeCircle(this.simArea.x, this.simArea.y, this.simArea.radius);
+
+                this.graphics.lineStyle(2, 0x2d3436, 0.3);
+                const step = this.lineSpacing;
+                const startY = this.simArea.y - this.simArea.radius;
+                const endY = this.simArea.y + this.simArea.radius;
+
+                for (let y = Math.ceil(startY / step) * step; y <= endY; y += step) {
+                    const dy = Math.abs(y - this.simArea.y);
+                    const dx = Math.sqrt(Math.pow(this.simArea.radius, 2) - Math.pow(dy, 2));
+                    this.graphics.moveTo(this.simArea.x - dx, y);
+                    this.graphics.lineTo(this.simArea.x + dx, y);
+                }
+                this.graphics.strokePath();
+            }
+
+            drop(count) {
+                if (!this.simArea) return;
+
+                const isFast = count > 1 || this.isPlaying;
+                const animDuration = isFast ? 400 : 1200; // Slowed down significantly
+
+                for (let i = 0; i < count; i++) {
+                    let rx, ry;
+                    do {
+                        rx = (Math.random() * 2 - 1) * this.simArea.radius;
+                        ry = (Math.random() * 2 - 1) * this.simArea.radius;
+                    } while (rx * rx + ry * ry > Math.pow(this.simArea.radius - this.needleLength / 2, 2));
+
+                    const x = this.simArea.x + rx;
+                    const y = this.simArea.y + ry;
+                    const angle = Math.random() * Math.PI;
+                    const crossed = this.needleCrossesLine(y, angle);
+
+                    const needle = { x, y, angle, crossed };
+
+                    if (document.hidden) {
+                        this.finishDrop(needle);
+                    } else {
+                        this.animateNeedle(needle, animDuration);
+                    }
+                }
+            }
+
+            animateNeedle(needle, duration) {
+                const tempGraphics = this.scene.add.graphics();
+                const L = this.needleLength;
+                const color = needle.crossed ? 0xe74c3c : 0x3498db;
+
+                tempGraphics.lineStyle(2, color, 1);
+                tempGraphics.moveTo(-L / 2, 0);
+                tempGraphics.lineTo(L / 2, 0);
+
+                // Start all needles falling from the top-center above the circle
+                tempGraphics.x = this.simArea.x;
+                tempGraphics.y = this.simArea.y - this.simArea.radius - 80;
+                tempGraphics.rotation = Math.random() * Math.PI; // Random initial spin
+                tempGraphics.scale = 2.5; // Starts bigger to simulate falling depth
+                tempGraphics.alpha = 0.2; // Starts slightly transparent
+                tempGraphics.setDepth(3);
+
+                this.scene.tweens.add({
+                    targets: tempGraphics,
+                    x: needle.x,
+                    y: needle.y,
+                    rotation: needle.angle,
+                    scale: 1,
+                    alpha: needle.crossed ? 0.8 : 0.4,
+                    duration: duration,
+                    ease: 'Quad.easeOut', // Smooth arc rather than a jittery bounce
+                    onComplete: () => {
+                        tempGraphics.destroy();
+                        this.finishDrop(needle);
+                    }
+                });
+            }
+
+            finishDrop(needle) {
+                this.n++;
+                if (needle.crossed) this.c++;
+                this.needles.push(needle);
+                this.manageNeedleCap();
+                this.updateStatistics();
+                this.drawNeedles();
+            }
+
+            needleCrossesLine(y, angle) {
+                const L = this.needleLength;
+                const D = this.lineSpacing;
+                const y1 = y - (L / 2) * Math.sin(angle);
+                const y2 = y + (L / 2) * Math.sin(angle);
+                return Math.floor(y1 / D) !== Math.floor(y2 / D);
+            }
+
+            manageNeedleCap() {
+                const hideOld = document.getElementById('check-hide-old').checked;
+                if (hideOld && this.needles.length > this.maxDisplayed) {
+                    this.needles.splice(0, this.needles.length - this.maxDisplayed);
+                }
+            }
+
+            drawNeedles() {
+                this.needleGraphics.clear();
+                const L = this.needleLength;
+                this.needles.forEach(n => {
+                    const x1 = n.x - (L / 2) * Math.cos(n.angle);
+                    const y1 = n.y - (L / 2) * Math.sin(n.angle);
+                    const x2 = n.x + (L / 2) * Math.cos(n.angle);
+                    const y2 = n.y + (L / 2) * Math.sin(n.angle);
+                    const color = n.crossed ? 0xe74c3c : 0x3498db;
+                    const alpha = n.crossed ? 0.8 : 0.4;
+                    this.needleGraphics.lineStyle(2, color, alpha);
+                    this.needleGraphics.beginPath();
+                    this.needleGraphics.moveTo(x1, y1);
+                    this.needleGraphics.lineTo(x2, y2);
+                    this.needleGraphics.strokePath();
+                });
+            }
+
+            updateStatistics() {
+                const nEl = document.getElementById('val-n');
+                const cEl = document.getElementById('val-c');
+                const piEl = document.getElementById('val-pi');
+                const errEl = document.getElementById('val-err');
+                const form2N = document.getElementById('formula-2n');
+                const formC = document.getElementById('formula-c');
+                const formResult = document.getElementById('formula-result');
+
+                if (nEl) nEl.textContent = this.n.toLocaleString();
+                if (cEl) cEl.textContent = this.c.toLocaleString();
+
+                if (form2N) form2N.textContent = `(2 × ${this.n.toLocaleString()})`;
+                if (formC) formC.textContent = this.c.toLocaleString();
+
+                if (this.c > 0) {
+                    const estimate = (2 * this.n) / this.c;
+                    if (piEl) piEl.textContent = estimate.toFixed(6);
+                    if (formResult) formResult.textContent = `= ${estimate.toFixed(6)}`;
+                    const error = Math.abs((estimate - Math.PI) / Math.PI) * 100;
+                    if (errEl) errEl.textContent = error.toFixed(2) + "%";
+                } else {
+                    if (formResult) formResult.textContent = "";
+                }
+            }
+
+            toggleAuto() {
+                this.isPlaying = !this.isPlaying;
+                const btn = document.getElementById('btn-auto');
+                btn.textContent = this.isPlaying ? "Pause" : "Play";
+                btn.className = this.isPlaying ? "btn btn-red" : "btn btn-green";
+            }
+
+            reset() {
+                this.n = 0;
+                this.c = 0;
+                this.needles = [];
+                this.needleGraphics.clear();
+                this.updateStatistics();
+                if (this.isPlaying) this.toggleAuto();
+            }
+
+            update() {
+                if (this.isPlaying) {
+                    const speed = parseInt(document.getElementById('speed-slider').value);
+                    const dropPerFrame = Math.ceil(speed / 5);
+                    this.drop(dropPerFrame);
+                }
+            }
+        }
+
+        const sim = new BuffonSimulation();
+    </script>
+</body>
+
+</html>
