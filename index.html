@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi in Space - Interactive Solar System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@300;500&display=swap');
+
+        :root {
+            --space-bg: #050508;
+            --sun-color: #ffcc33;
+            --earth-color: #2271b3;
+            --mars-color: #e27b58;
+            --moon-color: #ddd;
+            --glass-bg: rgba(20, 20, 30, 0.7);
+            --accent: #00d4ff;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--space-bg);
+            color: white;
+            font-family: 'Roboto Mono', monospace;
+            overflow: hidden;
+        }
+
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration, 3s) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Solar System Container */
+        #universe {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+            z-index: 1;
+        }
+
+        .sun {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #fffa70 0%, #ffcc33 50%, #ff8800 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #ffcc33;
+            z-index: 10;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .sun:hover {
+            transform: scale(1.1);
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .planet-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: rotate linear infinite;
+            animation-duration: var(--period);
+        }
+
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        /* Hitbox expansion for easier clicking */
+        .planet::after,
+        .sun::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            /* Standard touch target size */
+            height: 44px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: transparent;
+        }
+
+        .planet:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        /* Specific Orbits & Planets */
+        #orbit-moon {
+            width: 150px;
+            height: 150px;
+        }
+
+        #orbit-earth {
+            width: 350px;
+            height: 350px;
+        }
+
+        #orbit-mars {
+            width: 550px;
+            height: 550px;
+        }
+
+        #orbit-voyager {
+            width: 800px;
+            height: 800px;
+            border-style: dashed;
+        }
+
+        .earth {
+            background: var(--earth-color);
+            width: 20px;
+            height: 20px;
+            top: -10px;
+            box-shadow: 0 0 10px rgba(34, 113, 179, 0.5);
+        }
+
+        .mars {
+            background: var(--mars-color);
+            width: 15px;
+            height: 15px;
+            top: -7.5px;
+        }
+
+        .moon {
+            background: var(--moon-color);
+            width: 8px;
+            height: 8px;
+            top: -4px;
+        }
+
+        .voyager {
+            background: #fff;
+            width: 4px;
+            height: 4px;
+            top: -2px;
+            box-shadow: 0 0 5px #fff;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* UI Elements */
+        #header {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 20;
+            width: 90%;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+
+        #nav-panels {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 20px;
+            z-index: 20;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .nav-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s;
+            text-align: center;
+            width: 200px;
+        }
+
+        .nav-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-card h3 {
+            margin: 0 0 10px;
+            font-family: 'Orbitron';
+            color: var(--accent);
+        }
+
+        .nav-card p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+
+        /* Info Overlay */
+        #info-panel {
+            position: absolute;
+            right: -400px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 320px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 20px 0 0 20px;
+            border-left: 2px solid var(--accent);
+            transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 30;
+        }
+
+        #info-panel.active {
+            right: 0;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        #info-title {
+            font-family: 'Orbitron';
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--accent);
+        }
+
+        #info-pi {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        #info-desc {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        .pi-badge {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+                letter-spacing: 5px;
+            }
+
+            #orbit-earth {
+                width: 250px;
+                height: 250px;
+            }
+
+            #orbit-mars {
+                width: 380px;
+                height: 380px;
+            }
+
+            #orbit-voyager {
+                width: 500px;
+                height: 500px;
+            }
+
+            #info-panel {
+                width: 100%;
+                height: auto;
+                bottom: -100%;
+                top: auto;
+                right: 0;
+                border-radius: 20px 20px 0 0;
+                border-top: 2px solid var(--accent);
+                border-left: none;
+                transform: none;
+            }
+
+            #info-panel.active {
+                bottom: 0;
+                right: 0;
+            }
+
+            .nav-card {
+                width: 140px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="starfield"></div>
+
+    <div id="header">
+        <h1>Pi in the Sky</h1>
+        <div class="subtitle">Exploring the Infinite Accuracy of Space Exploration</div>
+    </div>
+
+    <div id="universe">
+        <div class="sun" onclick="showInfo('sun')"></div>
+
+        <!-- Earth Orbit -->
+        <div class="orbit" id="orbit-earth">
+            <div class="planet-container" style="--period: 20s">
+                <div class="planet earth" onclick="showInfo('earth')"></div>
+            </div>
+
+            <!-- Moon Orbit (Inside Earth orbit for simplicity) -->
+            <div class="orbit" id="orbit-moon"
+                style="border: none; animation: rotate linear infinite; animation-duration: 5s;">
+                <div class="planet moon" onclick="showInfo('moon')"></div>
+            </div>
+        </div>
+
+        <!-- Mars Orbit -->
+        <div class="orbit" id="orbit-mars">
+            <div class="planet-container" style="--period: 38s">
+                <div class="planet mars" onclick="showInfo('mars')"></div>
+            </div>
+        </div>
+
+        <!-- Voyager/Deep Space Orbit -->
+        <div class="orbit" id="orbit-voyager">
+            <div class="planet-container" style="--period: 60s">
+                <div class="planet voyager" onclick="showInfo('voyager')"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-panel">
+        <span class="close-btn" onclick="hideInfo()">&times; CLOSE</span>
+        <div id="info-title">Earth</div>
+        <div class="pi-badge" id="info-dp">15 Decimal Places</div>
+        <div id="info-pi">3.141592653589793</div>
+        <div id="info-desc">
+            NASA's JPL uses this much for the high-precision calculations of planetary navigation.
+        </div>
+    </div>
+
+    <div id="nav-panels">
+        <a href="quiz.html" class="nav-card">
+            <h3>QUIZ</h3>
+            <p>Test your memory up to 39 places</p>
+        </a>
+        <a href="piday.html" class="nav-card">
+            <h3>STREAM</h3>
+            <p>Live digit generation (Spigot Algorithm)</p>
+        </a>
+    </div>
+
+    <script>
+        // Create Stars
+        const starfield = document.getElementById('starfield');
+        const starCount = 200;
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
+            starfield.appendChild(star);
+        }
+
+        const data = {
+            sun: {
+                title: "The Sun",
+                dp: "1-5 DP",
+                pi: "3.14159",
+                desc: "Solar physics rarely requires extreme precision. 5 decimal places are plenty for modelling energy flux and solar wind trajectories."
+            },
+            moon: {
+                title: "The Moon",
+                dp: "10-12 Decimal Places",
+                pi: "3.1415926535",
+                desc: "Calculating lunar orbits for satellite insertions requires high precision, but is less demanding than interplanetary travel."
+            },
+            earth: {
+                title: "Planet Earth",
+                dp: "15 Decimal Places",
+                pi: "3.141592653589793",
+                desc: "NASA JPL standard for planetary navigation. At this precision, the Earth's circumference (24,901 miles) is measured to within the width of a human hair."
+            },
+            mars: {
+                title: "Mars Missions",
+                dp: "16 Decimal Places",
+                pi: "3.1415926535897932",
+                desc: "Landing a rover on Mars requires accounting for extreme distances. 16 digits ensure we don't miss our landing zone by even a centimeter."
+            },
+            voyager: {
+                title: "Deep Space (Voyager 1)",
+                dp: "15-16 Decimal Places",
+                pi: "3.1415926535897932",
+                desc: "Voyager 1 is over 12.5 billion miles away. Using 15 decimal places, our calculation of its position is off by only 1.5 inches!"
+            }
+        };
+
+        const panel = document.getElementById('info-panel');
+        const titleEl = document.getElementById('info-title');
+        const dpEl = document.getElementById('info-dp');
+        const piEl = document.getElementById('info-pi');
+        const descEl = document.getElementById('info-desc');
+
+        function showInfo(id) {
+            const item = data[id];
+            titleEl.textContent = item.title;
+            dpEl.textContent = item.dp;
+            piEl.textContent = item.pi;
+            descEl.textContent = item.desc;
+            panel.classList.add('active');
+        }
+
+        function hideInfo() {
+            panel.classList.remove('active');
+        }
+
+        // Handle clicking outside to close
+        document.addEventListener('click', (e) => {
+            if (!panel.contains(e.target) && !e.target.closest('.planet') && !e.target.closest('.sun')) {
+                hideInfo();
+            }
+        });
+    </script>
+</body>
+
+</html>

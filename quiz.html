@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Memory Quiz - Pi Day Special</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --neon-green: #00ff41;
+            --dark-bg: #0d0d0d;
+            --panel-bg: #1a1a1a;
+            --error-red: #ff3e3e;
+            --accent-blue: #00d4ff;
+        }
+
+        body {
+            font-family: 'JetBrains+Mono', 'Courier New', monospace;
+            background: var(--dark-bg);
+            color: var(--neon-green);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        #nav {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .back-link {
+            color: var(--neon-green);
+            text-decoration: none;
+            border: 1px solid var(--neon-green);
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: var(--neon-green);
+            color: black;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin: 10px 0 30px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        #quiz-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 65, 0.1);
+            border: 1px solid #333;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pi-display {
+            font-size: 2.5rem;
+            word-wrap: break-word;
+            margin-bottom: 20px;
+            min-height: 4rem;
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px inset #333;
+            line-height: 1.2;
+            position: relative;
+        }
+
+        #progress-container {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-green), var(--accent-blue));
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .blink {
+            animation: blinker 1s linear infinite;
+            color: var(--accent-blue);
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .digit {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .current-digit {
+            color: var(--accent-blue);
+            text-decoration: underline;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                border-bottom: 2px solid transparent;
+            }
+
+            to {
+                border-bottom: 2px solid var(--accent-blue);
+            }
+        }
+
+        #milestone-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.5s ease;
+        }
+
+        #milestone-title {
+            color: var(--accent-blue);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        #milestone-desc {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        #numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+            margin: 30px auto 0;
+        }
+
+        .num-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            font-size: 1.5rem;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+            box-shadow: 0 4px 0 #000;
+        }
+
+        .num-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #000;
+            background: #333;
+        }
+
+        .num-btn.correct {
+            border-color: var(--neon-green);
+            box-shadow: 0 4px 0 var(--neon-green);
+        }
+
+        .num-btn.wrong {
+            border-color: var(--error-red);
+            box-shadow: 0 4px 0 var(--error-red);
+            background: rgba(255, 62, 62, 0.1);
+        }
+
+        #accuracy-stats {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            #pi-display {
+                font-size: 1.8rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            #quiz-container {
+                padding: 15px;
+            }
+
+            .num-btn {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav">
+        <a href="index.html" class="back-link">&larr; HOME</a>
+        <div id="stats">Level: <span id="level-count">0</span>/39</div>
+    </div>
+
+    <h1>Pi Memory Challenge</h1>
+
+    <div id="quiz-container">
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div id="pi-display">
+            <span id="typed">3.</span><span id="cursor" class="blink">_</span>
+        </div>
+
+        <div id="milestone-card">
+            <div id="milestone-title">Start Typing!</div>
+            <div id="milestone-desc">How many digits of Pi can you remember? Each digit brings you closer to universal
+                accuracy.</div>
+        </div>
+
+        <div id="numpad">
+            <button class="num-btn" data-val="1">1</button>
+            <button class="num-btn" data-val="2">2</button>
+            <button class="num-btn" data-val="3">3</button>
+            <button class="num-btn" data-val="4">4</button>
+            <button class="num-btn" data-val="5">5</button>
+            <button class="num-btn" data-val="6">6</button>
+            <button class="num-btn" data-val="7">7</button>
+            <button class="num-btn" data-val="8">8</button>
+            <button class="num-btn" data-val="9">9</button>
+            <button class="num-btn reset-btn" id="reset-quiz" style="font-size: 1rem;">RESET</button>
+            <button class="num-btn" data-val="0">0</button>
+            <div style="grid-column: span 1;"></div>
+        </div>
+
+        <div id="accuracy-stats">
+            Digits: <span id="digit-count">0</span> | Mistakes: <span id="mistake-count">0</span>
+        </div>
+    </div>
+
+    <script>
+        const piDigits = "141592653589793238462643383279502884197";
+        const milestones = [
+            { dp: 0, title: "Getting Started", desc: "Just the basic 3. Let's see how much further you can go!" },
+            { dp: 1, title: "Rough Estimation", desc: "Estimate circumference with ~1-2% error. Useful for quick mental kitchen math!" },
+            { dp: 2, title: "Everyday Precision", desc: "Standard school maths. 1cm error on a 1m circle." },
+            { dp: 3, title: "Building Accuracy", desc: "Millimetre level accuracy for tanks, pipes, and foundations." },
+            { dp: 4, title: "Mechanical Engineering", desc: "Errors less than 0.03mm on a 10m circumference. Professional manufacturing scale!" },
+            { dp: 7, title: "Medical Imaging", desc: "Sub-micron geometric precision. Used in MRI and CT scan modelling." },
+            { dp: 10, title: "GPS Telecommunications", desc: "Better than 1mm mathematical precision. Real GPS is limited by atmosphere!" },
+            { dp: 15, title: "NASA Spacecraft Navigation", desc: "Calculate planetary trajectories with errors smaller than spacecraft sensors. 1cm error for Earth's circumference!" },
+            { dp: 16, title: "Extreme Orbital Modelling", desc: "More precision than practically required for interplanetary travel. You've outpaced NASA!" },
+            { dp: 39, title: "Cosmological Scale", desc: "Ultimate Accuracy. Calculate the circumference of the visible universe with an error smaller than a hydrogen atom." }
+        ];
+
+        let currentIndex = 0;
+        let mistakes = 0;
+        const typedEl = document.getElementById('typed');
+        const mistakeEl = document.getElementById('mistake-count');
+        const digitEl = document.getElementById('digit-count');
+        const levelEl = document.getElementById('level-count');
+        const milestoneTitleEl = document.getElementById('milestone-title');
+        const milestoneDescEl = document.getElementById('milestone-desc');
+        const piDisplayEl = document.getElementById('pi-display');
+        const progressBar = document.getElementById('progress-bar');
+        const resetBtn = document.getElementById('reset-quiz');
+
+        function updateMilestone() {
+            let currentMilestone = milestones[0];
+            for (const m of milestones) {
+                if (currentIndex >= m.dp) {
+                    currentMilestone = m;
+                }
+            }
+            milestoneTitleEl.textContent = `${currentIndex} DP: ${currentMilestone.title}`;
+            milestoneDescEl.textContent = currentMilestone.desc;
+
+            // Progress Bar
+            const progress = (currentIndex / piDigits.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Effect when reaching exactly a milestone
+            const isAtMilestone = milestones.some(m => m.dp === currentIndex && currentIndex > 0);
+            if (isAtMilestone) {
+                milestoneTitleEl.style.color = '#fff';
+                milestoneTitleEl.style.textShadow = '0 0 15px var(--accent-blue)';
+                setTimeout(() => {
+                    milestoneTitleEl.style.color = 'var(--accent-blue)';
+                    milestoneTitleEl.style.textShadow = 'none';
+                }, 1000);
+            }
+        }
+
+        function handleInput(val) {
+            if (currentIndex >= piDigits.length) return;
+
+            const expected = piDigits[currentIndex];
+            const btn = document.querySelector(`.num-btn[data-val="${val}"]`);
+
+            if (val == expected) {
+                typedEl.textContent += val;
+                currentIndex++;
+                digitEl.textContent = currentIndex;
+                levelEl.textContent = currentIndex;
+                updateMilestone();
+
+                // Visual feedback
+                if (btn) {
+                    btn.classList.add('correct');
+                    setTimeout(() => btn.classList.remove('correct'), 200);
+                }
+
+                if (currentIndex === piDigits.length) {
+                    milestoneTitleEl.textContent = "🏆 LEGENDARY ACCURACY";
+                    milestoneTitleEl.style.color = "gold";
+                    milestoneDescEl.textContent = "You have mastered Pi to 39 decimal places. You can now calculate the circumference of the observable universe!";
+                    document.getElementById('cursor').style.display = 'none';
+                }
+            } else {
+                mistakes++;
+                mistakeEl.textContent = mistakes;
+                piDisplayEl.classList.add('shake');
+                setTimeout(() => piDisplayEl.classList.remove('shake'), 400);
+
+                if (btn) {
+                    btn.classList.add('wrong');
+                    setTimeout(() => btn.classList.remove('wrong'), 200);
+                }
+            }
+        }
+
+        resetBtn.addEventListener('click', () => {
+            currentIndex = 0;
+            mistakes = 0;
+            typedEl.textContent = "3.";
+            mistakeEl.textContent = "0";
+            digitEl.textContent = "0";
+            levelEl.textContent = "0";
+            document.getElementById('cursor').style.display = 'inline';
+            updateMilestone();
+        });
+
+        // Numpad events
+        document.querySelectorAll('.num-btn[data-val]').forEach(btn => {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                handleInput(btn.dataset.val);
+            });
+        });
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') {
+                handleInput(e.key);
+            }
+        });
+
+        updateMilestone();
+    </script>
+</body>
+
+</html>

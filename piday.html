@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Streamer Pro</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #121212;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        #controls {
+            position: sticky;
+            top: 0;
+            background: #121212;
+            padding: 15px 0;
+            border-bottom: 2px solid #333;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        #pi-container {
+            word-wrap: break-word;
+            font-size: 1.1rem;
+            color: #00dd00;
+            letter-spacing: 1px;
+        }
+
+        .stats {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #00cc00;
+        }
+
+        button:disabled {
+            background: #444;
+            color: #888;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.1rem;
+            background: #00ff00;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="controls">
+        <button onclick="window.location.href='index.html'"
+            style="background: transparent; color: var(--accent-blue, #00d4ff); border: 1px solid currentColor;">&larr;
+            Home</button>
+        <button id="toggleBtn">Start</button>
+        <button id="downloadBtn" disabled>Download .txt</button>
+        <button onclick="window.location.href='quiz.html'"
+            style="background: var(--accent-blue, #00d4ff); color: #000;">Memory Quiz</button>
+        <div class="stats">Digits found: <span id="count">0</span></div>
+    </div>
+
+    <div id="pi-container">
+        3.<span id="digits"></span><span class="cursor"></span>
+    </div>
+
+    <script>
+        let running = false;
+        let digitCount = 0;
+        const display = document.getElementById('digits');
+        const countDisplay = document.getElementById('count');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Spigot Algorithm Generator
+        function* piGenerator() {
+            let q = 1n, r = 0n, t = 1n, k = 1n, n = 3n, l = 3n;
+            while (true) {
+                if (4n * q + r - t < n * t) {
+                    yield n;
+                    let nr = 10n * (r - n * t);
+                    n = ((10n * (3n * q + r)) / t) - 10n * n;
+                    q = 10n * q;
+                    r = nr;
+                } else {
+                    let nr = (2n * q + r) * l;
+                    let nn = (q * (7n * k + 2n) + r * l) / (t * l);
+                    q = q * k;
+                    t = t * l;
+                    r = nr;
+                    n = nn;
+                    k++;
+                    l += 2n;
+                }
+            }
+        }
+
+        const it = piGenerator();
+        it.next(); // Discard the initial '3'
+
+        function mainLoop() {
+            if (!running) return;
+
+            const digit = it.next().value;
+            display.textContent += digit;
+            digitCount++;
+            countDisplay.textContent = digitCount.toLocaleString();
+
+            // Enable download once we have digits
+            if (digitCount > 0) downloadBtn.disabled = false;
+
+            // Adjust the timeout (ms) to speed up or slow down the stream
+            setTimeout(mainLoop, 0);
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            running = !running;
+            toggleBtn.textContent = running ? "Pause" : "Resume";
+            if (running) mainLoop();
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const content = "3." + display.textContent;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pi_${digitCount}_digits.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+
+</html>
